@@ -1,0 +1,29 @@
+# --- Python & Environments ---
+__pycache__/
+*.py[cod]
+.venv/
+matadataenv/
+.env
+
+# --- IDE & Editor Settings ---
+.vscode/
+.idea/
+
+# --- Spark & Hadoop Junk ---
+# Spark creates these hidden metadata files and logs
+.spark-logs/
+metastore_db/
+spark-warehouse/
+*.crc
+_SUCCESS
+
+# --- Data Files (CRITICAL) ---
+# We keep the folder structure but ignore the actual data contents
+# This avoids pushing massive CSV/Parquet files to GitHub
+metadata-driven-etl/data/raw/*.csv
+metadata-driven-etl/data/csv_processed/**/part-*.csv
+metadata-driven-etl/data/processed/**/part-*.parquet
+
+# --- System Files ---
+.DS_Store
+Thumbs.db
