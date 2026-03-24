@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, upper, trim, lower, to_date, regexp_replace
 import psycopg2
+import os
 
 spark = SparkSession.builder.appName("MetadataDrivenETL").getOrCreate()
 
@@ -18,14 +19,18 @@ cursor = conn.cursor()
 cursor.execute("SELECT source_id, file_path, delimeter FROM source_config")
 sources = cursor.fetchall()
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # 2. Process EACH source (Notice the indentation!)
 for source in sources:
     source_id, file_path, delimeter = source
+    full_path = os.path.join(BASE_DIR, file_path)
     print(f"Processing source_id: {source_id} from {file_path}")
+    print(f"Resolved path: {full_path}")
 
     try:
         # Pass the dynamic delimiter here
-        df = spark.read.csv(file_path, header=True, inferSchema=True, sep=delimeter, nullValue = "na")
+        df = spark.read.csv(full_path, header=True, inferSchema=True, sep=delimeter, nullValue = "na")
 
         # 3. Fetch and apply rules for THIS specific source
         # Fixed the SELECT statement to match the 3 variables you unpack
@@ -35,7 +40,7 @@ for source in sources:
 
         for rule in rules:
             column, rule_type, value = rule
-            breakpoint()
+            # breakpoint()
             if rule_type == "drop_nulls":
                 df = df.dropna(subset=[column])
             elif rule_type == "drop_null":

@@ -3,6 +3,8 @@ from sqlalchemy import create_engine
 import psycopg2
 import pandas as pd
 import subprocess
+import os
+import sys
 
 st.title("🚀 Metadata-Driven ETL Control Panel")
 
@@ -27,9 +29,21 @@ source_dict = {name: s_id for s_id, name in sources}
 selected_source = st.selectbox("Select Data Source", list(source_dict.keys()))
 source_id = source_dict[selected_source]
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+python_path = sys.executable
+script_path = os.path.abspath(os.path.join(BASE_DIR, "etl", "spark_job.py"))
+
+# st.write("Python Path:", python_path)
+# st.write("Script Path:", script_path)
+
+st.write("Python exists:", os.path.exists(python_path))
+st.write("Script exists:", os.path.exists(script_path))
+
 if st.button("Run ETL Pipeline"):
     try:
-        subprocess.run(["python", "../etl/spark_job.py"], check=True)
+        
+        subprocess.run([python_path, script_path], check=True)
         st.success("ETL executed successfully!")
     except Exception as e:
         st.error(f"Error {e}")
@@ -49,7 +63,13 @@ st.dataframe(df_logs)
 st.subheader("📁 Processed Data Preview")
 
 try:
-    df_preview = pd.read_parquet(f"data/processed/clean_sales")
+    query = """
+        select source_name from source_config where source_id = %s
+        """
+    df_source = pd.read_sql(query, conn, params=(source_id,))
+    source_name = df_source.iloc[0]["source_name"]
+    st.write(source_name)
+    df_preview = pd.read_parquet(f"data/processed/clean_{source_name[:5]}")
     st.dataframe(df_preview.head(10))
 
 except Exception as e:
